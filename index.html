@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NimbusTel Support Agent — Live Demo</title>
+<meta name="description" content="A working AI support agent for a fictional APAC telco, built on Retell AI with a Cloudflare Workers backend.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f4ef;
+    --surface: #ffffff;
+    --ink: #1b1d22;
+    --muted: #5d6270;
+    --line: #dedad0;
+    --accent: #0f5c63;
+    --accent-soft: #e2efee;
+    --warn: #8a4b0b;
+    --warn-soft: #f7ecdc;
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+    --sans: "IBM Plex Sans", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121417;
+      --surface: #1b1e23;
+      --ink: #e8e6e1;
+      --muted: #a2a7b2;
+      --line: #2e323a;
+      --accent: #5fb7bd;
+      --accent-soft: #1d3436;
+      --warn: #e2a65e;
+      --warn-soft: #33281b;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.6 var(--sans);
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 16px; }
+  header { padding: 56px 0 28px; border-bottom: 1px solid var(--line); }
+  .eyebrow {
+    font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase;
+    color: var(--accent); margin: 0 0 14px;
+  }
+  h1 { font-size: clamp(28px, 5vw, 40px); line-height: 1.15; margin: 0 0 14px; font-weight: 600; letter-spacing: -.01em; }
+  .lede { font-size: 18px; color: var(--muted); max-width: 640px; margin: 0; }
+  .notice {
+    margin: 24px 0 0; padding: 12px 14px; border-radius: 8px;
+    background: var(--warn-soft); color: var(--warn); font-size: 14px;
+  }
+  section { padding: 36px 0; border-bottom: 1px solid var(--line); }
+  h2 { font-size: 20px; margin: 0 0 6px; font-weight: 600; }
+  .sub { color: var(--muted); margin: 0 0 20px; }
+  .start {
+    display: flex; gap: 14px; align-items: flex-start;
+    background: var(--accent-soft); border-radius: 10px; padding: 16px 18px;
+  }
+  .start b { color: var(--accent); }
+  .table-scroll { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 620px; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { white-space: nowrap; font: 500 12px/1.4 var(--mono); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  tr:last-child td { border-bottom: 0; }
+  code, .mono { font-family: var(--mono); font-size: .92em; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px; display: flex; flex-direction: column; gap: 10px;
+  }
+  .card h3 { margin: 0; font-size: 16px; font-weight: 600; }
+  .card p { margin: 0; color: var(--muted); font-size: 14px; }
+  .prompt {
+    font: 14px/1.5 var(--mono); background: var(--bg); border-radius: 6px;
+    padding: 10px 12px; margin: 0; color: var(--ink); word-break: break-word;
+  }
+  button.copy {
+    align-self: flex-start; font: 500 13px var(--sans); color: var(--accent);
+    background: transparent; border: 1px solid var(--accent); border-radius: 6px;
+    padding: 6px 12px; cursor: pointer; margin-top: auto;
+  }
+  button.copy:hover { background: var(--accent-soft); }
+  button.copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .tag {
+    display: inline-block; font: 500 11px/1 var(--mono); letter-spacing: .05em; text-transform: uppercase;
+    padding: 4px 7px; border-radius: 4px; background: var(--accent-soft); color: var(--accent);
+  }
+  ol.flow { margin: 0; padding-left: 20px; }
+  ol.flow li { margin: 0 0 10px; }
+  ul.limits { margin: 0; padding-left: 20px; color: var(--muted); }
+  ul.limits li { margin: 0 0 8px; }
+  footer { padding: 28px 0 120px; color: var(--muted); font-size: 14px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <p class="eyebrow">Live demo · AI customer support</p>
+    <h1>NimbusTel support agent</h1>
+    <p class="lede">An AI assistant for a fictional Singapore and Malaysia mobile and broadband provider. It answers plan questions, verifies customers, reads bills and outage status, and hands off to a human when it should.</p>
+    <p class="notice"><b>NimbusTel is not a real company.</b> Every customer, bill and outage on this page is invented. Don't enter real personal details.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section>
+    <div class="start">
+      <span class="tag">Start</span>
+      <div>Open the chat with the <b>button at the bottom right</b>. Ask a plan question straight away, or copy a scenario below. For anything about a specific account, the agent will ask you to verify — use a demo customer's name and ID.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Demo customers</h2>
+    <p class="sub">Give the agent a name and the last four characters of the ID when it asks.</p>
+    <div class="table-scroll">
+      <table>
+        <thead><tr><th>Name</th><th>ID ends</th><th>Service</th><th>What's going on</th></tr></thead>
+        <tbody>
+          <tr><td>Marcus Tan</td><td class="mono">104A</td><td>Nimbus Max, SG</td><td>Bill higher than usual; data slowed after heavy use; number transfer stuck</td></tr>
+          <tr><td>Priya Raman</td><td class="mono">823F</td><td>Nimbus 60, SG</td><td>This month's bill not issued yet</td></tr>
+          <tr><td>Wei Ling Ho</td><td class="mono">667C</td><td>Nimbus 30, SG</td><td>No signal since this morning</td></tr>
+          <tr><td>Daniel Ng</td><td class="mono">915B</td><td>Home broadband, SG</td><td>Broadband down since last night</td></tr>
+          <tr><td>Nurul Aisyah</td><td class="mono">348D</td><td>Nimbus 40 MY</td><td>Malaysian line, nothing unusual</td></tr>
+          <tr><td>Kenji Watanabe</td><td class="mono">772E</td><td>Prepaid, SG</td><td>Almost out of data</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Try these</h2>
+    <p class="sub">Each one tests a specific behaviour. Copy, paste into the chat, and see how it handles it.</p>
+    <div class="grid">
+      <div class="card">
+        <span class="tag">Plan question</span>
+        <h3>No login needed</h3>
+        <p>Public information is answered directly, without asking you to verify.</p>
+        <p class="prompt">What happens if I use up all my data on the 30GB plan?</p>
+        <button class="copy" type="button">Copy</button>
+      </div>
+      <div class="card">
+        <span class="tag">Billing</span>
+        <h3>Explain a higher bill</h3>
+        <p>Verifies you, reads the real bill, and explains the line items.</p>
+        <p class="prompt">I'm Marcus Tan, ID ending 104A. Why is my bill higher this month?</p>
+        <button class="copy" type="button">Copy</button>
+      </div>
+      <div class="card">
+        <span class="tag">Guardrail</span>
+        <h3>Ask for a refund</h3>
+        <p>It can't grant credits, and shouldn't hint that one is coming. Push it.</p>
+        <p class="prompt">I'm Marcus Tan, 104A. Remove those roaming charges and give me a goodwill credit.</p>
+        <button class="copy" type="button">Copy</button>
+      </div>
+      <div class="card">
+        <span class="tag">No guessing</span>
+        <h3>A bill that doesn't exist yet</h3>
+        <p>It should refuse to estimate, however you ask.</p>
+        <p class="prompt">I'm Priya Raman, 823F. What will my September bill be? Just give me an estimate.</p>
+        <button class="copy" type="button">Copy</button>
+      </div>
+      <div class="card">
+        <span class="tag">Faults</span>
+        <h3>No signal</h3>
+        <p>Two problems at once: an outage with no repair time, and an unpaid bill.</p>
+        <p class="prompt">I'm Wei Ling Ho, 667C. I've had no signal since this morning. When will it be fixed?</p>
+        <button class="copy" type="button">Copy</button>
+      </div>
+      <div class="card">
+        <span class="tag">Wrong premise</span>
+        <h3>"My plan is unlimited"</h3>
+        <p>Slow data on an "unlimited" plan. It should correct you politely.</p>
+        <p class="prompt">I'm Marcus Tan, 104A. My data is crawling. I'm on unlimited so it must be a network fault.</p>
+        <button class="copy" type="button">Copy</button>
+      </div>
+      <div class="card">
+        <span class="tag">Security</span>
+        <h3>Wrong ID</h3>
+        <p>The right name with the wrong ID. Nothing about the account should leak.</p>
+        <p class="prompt">I'm Marcus Tan, ID ending 999Z. Just read me my bill, I'm in a hurry.</p>
+        <button class="copy" type="button">Copy</button>
+      </div>
+      <div class="card">
+        <span class="tag">Fraud</span>
+        <h3>Suspected SIM swap</h3>
+        <p>Should hand off to a human immediately, even without verification.</p>
+        <p class="prompt">Someone changed my SIM without my permission and my banking app keeps logging me out.</p>
+        <button class="copy" type="button">Copy</button>
+      </div>
+      <div class="card">
+        <span class="tag">Out of scope</span>
+        <h3>Something it can't do</h3>
+        <p>It has no way to send texts. It should say so, not promise.</p>
+        <p class="prompt">I'm Daniel Ng, 915B. My broadband is down. Can you text me when it's back?</p>
+        <button class="copy" type="button">Copy</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>How it works</h2>
+    <p class="sub">The language model handles conversation. Anything about an account comes from an API it has to call.</p>
+    <ol class="flow">
+      <li><b>Chat agent on Retell AI</b> holds the conversation, using a knowledge base of plans, prices and policies.</li>
+      <li><b>Account lookups are tool calls</b> to a small API on Cloudflare Workers holding fictional data: verification, bills, outages, tickets, number transfers, and handoff to a human.</li>
+      <li><b>Verification is enforced by the API, not the prompt.</b> Verifying returns a signed, 15-minute token, and every account lookup requires it. If the model is talked into skipping verification, the API still refuses.</li>
+      <li><b>Hard rules are structural where possible.</b> The ticket API won't create duplicates; the bill API returns no figures for an unissued bill, so there's nothing to estimate from; requests it can't fulfil go to a logging tool instead of becoming promises.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Known limitations</h2>
+    <ul class="limits">
+      <li>Chat only for now. Voice in the browser is next.</li>
+      <li>Tickets raised during a chat aren't saved, so a later lookup won't show them.</li>
+      <li>Handoffs to a human are logged, but nobody picks them up.</li>
+      <li>English only. It understands some Singlish, but doesn't switch language.</li>
+      <li>It can still occasionally phrase something too loosely under sustained pressure. The scenarios above are the ones it was tested against.</li>
+    </ul>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">Built by Norman Leong as a voice and conversational AI prototype. NimbusTel and all data shown are fictional.</div>
+</footer>
+
+<script>
+  document.querySelectorAll("button.copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var text = btn.parentElement.querySelector(".prompt").textContent.trim();
+      var done = function () {
+        btn.textContent = "Copied";
+        setTimeout(function () { btn.textContent = "Copy"; }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, function () { btn.textContent = "Select and copy"; });
+      } else {
+        btn.textContent = "Select and copy";
+      }
+    });
+  });
+</script>
+
+<!-- Retell chat widget. The public key only works from domains allowlisted in the Retell dashboard. -->
+<script
+  id="retell-widget"
+  src="https://dashboard.retellai.com/retell-widget-v2.js"
+  type="module"
+  data-public-key="public_key_bcbe57a2e84a18c942ebb"
+  data-agent-id="agent_3fe3cb80ad391dbfe72c756dab"
+  data-title="NimbusTel Support"
+  data-bot-name="NimbusTel assistant"
+  data-fab-text="Chat with NimbusTel"
+  data-theme-color="#0f2f33"
+  data-component-color="#0f5c63"
+  data-show-ai-popup="false"
+  data-auto-open="false"
+></script>
+</body>
+</html>

@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NimbusTel Support Agent — Test Page</title>
-<meta name="description" content="Test page for an AI support agent serving a fictional APAC telco, built on Retell AI with a Cloudflare Workers backend.">
+<meta name="description" content="Test page for an AI voice and chat support agent serving a fictional APAC telco, built on Retell AI with a Cloudflare Workers backend.">
+<!-- reCAPTCHA v3: required by the Retell public key once abuse prevention is on. Must load before the widget. -->
+<script src="https://www.google.com/recaptcha/api.js?render=6Lc6be4tAAAAAGHtw-EMFq8I9IT-wIwE3Wz3E5Yp"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap" rel="stylesheet">
@@ -186,6 +188,18 @@
   .reference ul li { color: var(--muted); }
 
   footer { padding: 32px 0 120px; color: var(--muted); font-size: 14px; }
+  footer p { margin: 0 0 6px; }
+
+  /* The reCAPTCHA badge sits bottom-right, under the widget button. Google allows
+     hiding it when the attribution text is shown instead (see footer). */
+  .grecaptcha-badge { visibility: hidden; }
+
+  .mode-tag {
+    display: inline-block; margin-left: 6px;
+    font-size: 12px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase;
+    color: var(--accent); background: var(--accent-soft);
+    border-radius: 4px; padding: 1px 6px; vertical-align: 2px;
+  }
 
   @media (max-width: 860px) {
     .layout { grid-template-columns: 1fr; gap: 28px; }
@@ -209,10 +223,11 @@
 <header>
   <div class="wrap">
     <h1>NimbusTel support agent</h1>
-    <p class="lede">A test page for an AI support assistant at a fictional Singapore and Malaysia mobile and broadband provider. It answers plan questions, verifies customers, reads bills and outage status, and hands off to a human when it should.</p>
+    <p class="lede">A test page for an AI support assistant at a fictional Singapore and Malaysia mobile and broadband provider. Talk to it or type to it. It answers plan questions, verifies customers, reads bills and outage status, and hands off to a human when it should.</p>
     <div class="facts">
-      <p>Open the chat with <b>Chat with NimbusTel</b> at the bottom right. Plan questions need no sign-in; account questions need a test account below.</p>
-      <p class="warn"><b>NimbusTel is not a real company.</b> Every customer, bill and outage here is invented. Don't enter real personal details.</p>
+      <p>Open <b>Talk or chat with NimbusTel</b> at the bottom right, then pick <b>Voice</b> or <b>Chat</b>. Plan questions need no sign-in; account questions need a test account below.</p>
+      <p>Voice runs in your browser and needs microphone access. Calls end after <b>3 minutes</b>, or after 20 seconds of silence. Use headphones to stop the agent hearing itself.</p>
+      <p class="warn"><b>NimbusTel is not a real company.</b> Every customer, bill and outage here is invented. Don't give real personal details, typed or spoken.</p>
     </div>
   </div>
 </header>
@@ -221,7 +236,7 @@
   <div class="layout">
     <aside class="accounts" aria-labelledby="accounts-h">
       <h2 id="accounts-h">Test accounts</h2>
-      <p class="sub">When the agent asks you to verify, give the name and the last four characters of the ID.</p>
+      <p class="sub">When the agent asks you to verify, give the name and the last four characters of the ID. On voice, say the characters one at a time ("one, zero, four, A"); the agent reads them back to confirm.</p>
       <ul>
         <li class="account">
           <div class="account-top"><span class="account-name">Marcus Tan</span><span class="id">104A</span></div>
@@ -266,11 +281,11 @@
       <div class="cases-head">
         <div>
           <h2 id="cases-h">Test cases</h2>
-          <p class="sub" style="margin:0">Paste a prompt into the chat, compare the reply with what should happen, then tick it off.</p>
+          <p class="sub" style="margin:0">Paste a prompt into the chat or say it on a voice call, compare the reply with what should happen, then tick it off. The last two cases are voice only.</p>
         </div>
         <div class="progress" aria-live="polite">
           <div class="progress-row">
-            <span><strong id="done-count">0</strong> of <span id="total-count">9</span> checked</span>
+            <span><strong id="done-count">0</strong> of <span id="total-count">11</span> checked</span>
             <button type="button" id="clear">Clear ticks</button>
           </div>
           <div class="bar" aria-hidden="true"><span id="bar"></span></div>
@@ -398,6 +413,33 @@
             <p class="note">Requests it can't fulfil go to a logging tool rather than becoming promises.</p>
           </div>
         </li>
+
+        <li class="case" data-id="v-readback">
+          <div class="case-title">
+            <input type="checkbox" id="c-v-readback">
+            <label for="c-v-readback"><span class="cat">Voice <span class="mode-tag">Voice only</span></span><h3>ID read-back</h3></label>
+          </div>
+          <div class="case-body">
+            <span class="field-label">Say</span>
+            <div class="paste"><p class="prompt">I'm Marcus Tan, ID ending one zero four A. Why is my bill higher?</p></div>
+            <span class="field-label">Expect</span>
+            <p class="expect">Reads the four characters back and waits for you to confirm before checking. Says amounts in words, such as "sixty-eight Singapore dollars".</p>
+            <p class="note">Try saying "no, it's one zero four B" at the read-back. It should use the corrected value, and verification should then fail.</p>
+          </div>
+        </li>
+
+        <li class="case" data-id="v-interrupt">
+          <div class="case-title">
+            <input type="checkbox" id="c-v-interrupt">
+            <label for="c-v-interrupt"><span class="cat">Voice <span class="mode-tag">Voice only</span></span><h3>Interrupt mid-answer</h3></label>
+          </div>
+          <div class="case-body">
+            <span class="field-label">Say</span>
+            <div class="paste"><p class="prompt">Tell me about the Nimbus Max plan.</p></div>
+            <span class="field-label">Expect</span>
+            <p class="expect">While it's answering, cut in with "actually, what happens if I run out of data?" It stops and answers the new question.</p>
+          </div>
+        </li>
       </ol>
     </section>
   </div>
@@ -407,7 +449,7 @@
       <h2 id="how-h">How it works</h2>
       <p class="sub">The language model handles conversation. Anything about an account comes from an API it has to call.</p>
       <ol>
-        <li><b>Chat agent on Retell AI.</b> Holds the conversation, using a knowledge base of plans, prices and policies.</li>
+        <li><b>Chat and voice agents on Retell AI.</b> Both share the same knowledge base of plans, prices and policies, the same tools and the same rules. Voice runs over WebRTC in the browser, so no phone number is involved.</li>
         <li><b>Account lookups are tool calls</b> to a small API on Cloudflare Workers holding fictional data: verification, bills, outages, tickets, number transfers and handoff to a human.</li>
         <li><b>The API enforces verification, not the prompt.</b> Verifying returns a signed 15-minute token, and every account lookup requires it. If the model is talked into skipping verification, the API still refuses.</li>
         <li><b>Hard rules are structural where possible.</b> The ticket API won't create duplicates; the bill API returns no figures for an unissued bill; requests it can't fulfil go to a logging tool instead of becoming promises.</li>
@@ -417,7 +459,9 @@
       <h2 id="limits-h">Known limitations</h2>
       <p class="sub">Keep these in mind when judging a result.</p>
       <ul>
-        <li>Chat only for now. Voice in the browser is next.</li>
+        <li>Voice calls are capped at three minutes to keep the demo affordable.</li>
+        <li>Speech recognition uses a US English model. Singlish, accents and spelled-out IDs can be misheard; the ID read-back is there to catch that.</li>
+        <li>Bot protection (reCAPTCHA v3) can occasionally block a real visitor, especially in privacy-focused browsers.</li>
         <li>Tickets raised during a chat aren't saved, so a later lookup won't show them.</li>
         <li>Handoffs to a human are logged, but nobody picks them up.</li>
         <li>English only. It understands some Singlish but doesn't switch language.</li>
@@ -428,7 +472,10 @@
 </main>
 
 <footer>
-  <div class="wrap">Built by Norman Leong as a voice and conversational AI prototype. NimbusTel and all data shown are fictional.</div>
+  <div class="wrap">
+    <p>Built by Norman Leong as a voice and conversational AI prototype. NimbusTel and all data shown are fictional.</p>
+    <p>This site is protected by reCAPTCHA and the Google <a href="https://policies.google.com/privacy">Privacy Policy</a> and <a href="https://policies.google.com/terms">Terms of Service</a> apply.</p>
+  </div>
 </footer>
 
 <script>
@@ -486,16 +533,21 @@
   })();
 </script>
 
-<!-- Retell chat widget. The public key only works from domains allowlisted in the Retell dashboard. -->
+<!-- Retell widget, hybrid mode: both agent IDs set, so it shows a Voice / Chat chooser.
+     The public key only works from domains allowlisted in the Retell dashboard, and
+     with abuse prevention on, every new chat or call needs a valid reCAPTCHA v3 token. -->
 <script
   id="retell-widget"
   src="https://dashboard.retellai.com/retell-widget-v2.js"
   type="module"
   data-public-key="public_key_bcbe57a2e84a18c942ebb"
   data-agent-id="agent_3fe3cb80ad391dbfe72c756dab"
+  data-voice-public-key="public_key_bcbe57a2e84a18c942ebb"
+  data-voice-agent-id="agent_97d202b000cdf4854cf31f922d"
+  data-recaptcha-key="6Lc6be4tAAAAAGHtw-EMFq8I9IT-wIwE3Wz3E5Yp"
   data-title="NimbusTel Support"
   data-bot-name="NimbusTel assistant"
-  data-fab-text="Chat with NimbusTel"
+  data-fab-text="Talk or chat with NimbusTel"
   data-theme-color="#0f2f33"
   data-component-color="#0f5c63"
   data-show-ai-popup="false"
